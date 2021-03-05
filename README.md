@@ -2,7 +2,7 @@
 
 English description:
 In this project we used OpenCv's line detection algorithm and DarkNet's pre-trained YOLO model. Through we have an object recognition and line detection application prototype. I'm sharing this project so you can get inspiration for your project or you can improve this project. You need to know something before work on this codes;
-1. There is either screen capture or camera use codes in this project. Screen capture for testing different videos in your desktop easily. Webcam images for implementation real world problems it is your choice.
+1. There is either screen capture or footage codes in this project. Screen capture for testing different videos in your desktop easily. Webcam images for implementation real world problems it is your choice.
 2. As you can see some videos has nearby 20 FPS but other some videos has just 4 FPS the reason for this the neural network model has different weights and we use two of them. If you use YOLOv3-tiny weight you will see 20 FPS but this weights has restricted recognition ability. If you use YOLOv3-spp weights you will see 4 FPS and more recognition ability, choose what you need.
 3. You can download weights, cfg and names files in DarkNet's official website. Here is the link: https://pjreddie.com/darknet/yolo/
 
