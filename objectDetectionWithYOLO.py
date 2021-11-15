@@ -24,7 +24,7 @@ COLORS = np.random.randint(0, 255, size=(len(LABELS), 3),dtype="uint8")
 net = cv2.dnn.readNetFromDarknet("yolov3-spp.cfg", "yolov3-spp.weights")
 
 ln = net.getLayerNames()
-ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+ln = [ln[i - 1] for i in net.getUnconnectedOutLayers()]
 
 sct = mss.mss() # this is for screen capture
 monitor = {"top": 150, "left": 0, "width": 800, "height": 640} # this is for screen capture
