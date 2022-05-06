@@ -3,40 +3,25 @@ import cv2
 from time import time
 import mss
 
-def roi(img,vertices):
+LABELS_PATH = "coco.names"
+LABELS = open(LABELS_PATH).read().strip().split("\n")
+COLORS = np.random.randint(0, 255, size=(len(LABELS), 3),dtype="uint8")
+
+def roi(img, vertices):
     mask = np.zeros_like(img)
-    cv2.fillPoly(mask,vertices,255)
-    masked = cv2.bitwise_and(img,mask)
+    cv2.fillPoly(mask, vertices, 255)
+    masked = cv2.bitwise_and(img, mask)
     return masked
+
 def edge_detect(img):
     oimg = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    blur_gray = cv2.GaussianBlur(oimg,(5, 5),1)
+    blur_gray = cv2.GaussianBlur(oimg, (5, 5), 1)
     edges = cv2.Canny(blur_gray, 50, 150)
     vertices = np.array([[10,600], [10,500], [300,370], [500,370], [800,500], [800,600]])
     oimg = roi(edges,[vertices])
     return oimg
 
-np.random.seed(42)
-labelsPath = "coco.names"
-LABELS = open(labelsPath).read().strip().split("\n")
-COLORS = np.random.randint(0, 255, size=(len(LABELS), 3),dtype="uint8")
-
-net = cv2.dnn.readNetFromDarknet("yolov3-spp.cfg", "yolov3-spp.weights")
-
-ln = net.getLayerNames()
-ln = [ln[i - 1] for i in net.getUnconnectedOutLayers()]
-
-sct = mss.mss() # this is for screen capture
-monitor = {"top": 150, "left": 0, "width": 800, "height": 640} # this is for screen capture
-
-#cam = cv2.VideoCapture(0) # this is for webcam
-
-loop_time = time()
-while(True):
-    image = np.array(sct.grab(monitor))   # this is for screen capture
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR) # this is for screen capture
-    #_,image = cam.read() # this is for webcam
-
+def draw_lines(image):
     gray = edge_detect(image)
     linesP = cv2.HoughLinesP(gray, 1, np.pi / 180, 50, None, 100, 10)
 
@@ -44,14 +29,15 @@ while(True):
         for i in range(0, len(linesP)):
             l = linesP[i][0]
             cv2.line(image, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA)
+    return image
 
+def detect_from_image(image, net, layer_names):
     (H, W) = image.shape[:2]    
     blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416),	swapRB=True, crop=False)
     net.setInput(blob)
-    layer_outputs = net.forward(ln)
-    boxes = []
-    confidences = []
-    class_ids = []
+    layer_outputs = net.forward(layer_names)
+    boxes, confidences, class_ids = [], [], []
+    
     for output in layer_outputs:
         for detection in output:
             scores = detection[5:]
@@ -77,15 +63,51 @@ while(True):
             cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
             text = "{}: {:.4f}".format(LABELS[class_ids[i]], confidences[i])
             cv2.putText(image, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    return image
 
-    fps = "FPS: {:.1f}".format(1 / (time() - loop_time))
-    loop_time = time()
-    cv2.putText(image, fps, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2)
+class Frame:
+    def __init__(self, source='webcam', screen_size=(800, 640)):
+        self.source_name = source
+        self.screen_size = screen_size
+        self.source = cv2.VideoCapture(0) if source == 'webcam' else mss.mss()
 
-    image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB) # this is for screen capture
-    cv2.imshow("Image", image)
+    def get_frame(self):
+        if self.source_name == 'webcam':
+            _, image = self.source.read()
+        elif self.source_name == 'screen':
+            monitor = {"top": 0, "left": 0,
+                       "width": self.screen_size[0], "height": self.screen_size[1]}
+            image = np.array(self.source.grab(monitor))
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        return image
 
-    if cv2.waitKey(1) == ord("q"):
-        # cam.release() #this is for webcam
-        cv2.destroyAllWindows()
-        break
+def main(source='screen', lines=False, weights='tiny'):
+    net = cv2.dnn.readNetFromDarknet(f"weights/yolov3-{weights}.cfg", f"weights/yolov3-{weights}.weights")
+
+    layer_names = net.getLayerNames()
+    layer_names = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
+
+    frame = Frame(source=source)
+    
+    while(True):
+        loop_time = time()
+        
+        image = frame.get_frame()
+        
+        image = draw_lines(image=image) if lines else image
+        image = detect_from_image(image, net, layer_names)
+        
+        fps = "FPS: {:.1f}".format(1 / (time() - loop_time))
+        cv2.putText(image, fps, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        if source == 'screen':
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        cv2.imshow("Image", image)
+
+        if cv2.waitKey(1) == ord("q"):
+            if source == 'webcam':
+                frame.source.release()
+            cv2.destroyAllWindows()
+            break
+
+if __name__ == "__main__":
+    main(source='screen', weights='tiny')
