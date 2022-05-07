@@ -1,6 +1,6 @@
 # pip install -r requirements.txt
 
-torch==1.7.1
-mss==6.1.0
-opencv-python==4.5.4.58
-numpy==1.21.3
+torch
+mss
+opencv-python
+numpy
