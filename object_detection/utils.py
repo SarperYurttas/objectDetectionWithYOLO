@@ -1,9 +1,9 @@
 import numpy as np
 import cv2
 import mss
-from pathlib import Path
+import os
 
-LABELS_PATH = Path(__file__).absolute().parent / 'coco.names'
+LABELS_PATH = os.path.dirname(__file__) + '/coco.names'
 LABELS = open(LABELS_PATH).read().strip().split("\n")
 COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
 

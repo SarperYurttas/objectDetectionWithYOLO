@@ -2,7 +2,7 @@ from .utils import Frame, COLORS, LABELS
 from time import time
 import numpy as np
 import cv2
-from pathlib import Path
+import os
 
 
 def detect_from_image(image, model, layer_names):
@@ -43,10 +43,9 @@ def detect_from_image(image, model, layer_names):
 
 
 def yolov3(source='screen', model='yolov3-tiny', screen_size=(800, 640)):
-    cfg = Path(__file__).absolute().parent / f"weights/{model}.cfg"
-    weigths = Path(__file__).absolute().parent / f"weights/{model}.weights"
-    print(cfg)
-    model = cv2.dnn.readNetFromDarknet(cfg, weigths)
+    cfg = os.path.dirname(__file__) + f"/weights/{model}.cfg"
+    weights = os.path.dirname(__file__) + f"/weights/{model}.weights"
+    model = cv2.dnn.readNetFromDarknet(cfg, weights)
 
     layer_names = model.getLayerNames()
     layer_names = [layer_names[i - 1] for i in model.getUnconnectedOutLayers()]
