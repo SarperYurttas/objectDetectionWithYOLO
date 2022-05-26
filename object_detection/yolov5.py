@@ -12,7 +12,7 @@ def detect_from_image(model, image, size):
             x, y, w, h, conf, label = pred
             x -= w/2
             y -= h/2
-            color = COLORS[label.astype(int)]
+            color = COLORS[label.astype(int)].tolist()
             cv2.rectangle(image, (x.astype(int), y.astype(int)),
                           ((x + w).astype(int), (y + h).astype(int)), color, 3)
 
